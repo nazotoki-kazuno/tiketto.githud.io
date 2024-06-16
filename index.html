@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>チケットサイト</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        .menu { margin-bottom: 20px; }
+        .menu button { margin-right: 10px; }
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+        .logout { display: none; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <button onclick="showTab('login')">ログイン</button>
+        <button onclick="showTab('register')">新規会員登録</button>
+        <button id="buyTicketBtn" onclick="showTab('buyTicket')">チケット購入</button>
+        <button id="useTicketBtn" onclick="showTab('useTicket')">チケット使用</button>
+        <button onclick="showTab('deleteAccount')">会員削除</button>
+        <button onclick="promptPassword()">公演追加</button>
+        <button class="logout" id="logoutBtn" onclick="logout()">ログアウト</button>
+    </div>
+
+    <div id="login" class="tab">
+        <h2>ログイン</h2>
+        <form id="loginForm">
+            <label>ユーザー名: <input type="text" id="loginUsername" required></label><br>
+            <label>パスワード: <input type="password" id="loginPassword" required></label><br>
+            <button type="submit">ログイン</button>
+        </form>
+    </div>
+
+    <div id="register" class="tab">
+        <h2>新規会員登録</h2>
+        <form id="registerForm">
+            <label>ユーザー名: <input type="text" id="registerUsername" required></label><br>
+            <label>パスワード: <input type="password" id="registerPassword" required></label><br>
+            <button type="submit">登録</button>
+        </form>
+    </div>
+
+    <div id="buyTicket" class="tab">
+        <h2>チケット購入</h2>
+        <form id="buyTicketForm">
+            <label>公演名:
+                <select id="performanceSelect">
+                    <option value="公演1">公演1</option>
+                    <option value="公演2">公演2</option>
+                    <option value="公演3">公演3</option>
+                </select>
+            </label><br>
+            <label>パスワード: <input type="password" id="ticketPassword" required></label><br>
+            <button type="submit">購入</button>
+        </form>
+    </div>
+
+    <div id="useTicket" class="tab">
+        <h2>チケット使用</h2>
+        <table id="ticketTable">
+            <thead>
+                <tr>
+                    <th>公演名</th>
+                    <th>購入時の時間</th>
+                    <th>使用状況</th>
+                    <th>使用</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- ここにチケット情報を表示 -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="deleteAccount" class="tab">
+        <h2>会員削除</h2>
+        <form id="deleteAccountForm">
+            <label>ユーザー名: <input type="text" id="deleteUsername" required></label><br>
+            <label>パスワード: <input type="password" id="deletePassword" required></label><br>
+            <button type="submit">削除</button>
+        </form>
+    </div>
+
+    <div id="addPerformance" class="tab">
+        <h2>公演追加</h2>
+        <form id="addPerformanceForm">
+            <label>公演名: <input type="text" id="newPerformanceName" required></label><br>
+            <label>指定URL: <input type="url" id="newPerformanceURL" required></label><br>
+            <button type="submit">追加</button>
+        </form>
+    </div>
+
+    <script>
+        let currentUser = null;
+        const ticketData = [];
+        const requiredAddPassword = 'Kazuki0107';
+
+        function showTab(tabId) {
+            if ((tabId === 'buyTicket' || tabId === 'useTicket') && !currentUser) {
+                alert('この機能を利用するにはログインが必要です。');
+                return;
+            }
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function promptPassword() {
+            const password = prompt('パスワードを入力してください');
+            if (password === requiredAddPassword) {
+                showTab('addPerformance');
+            } else {
+                alert('パスワードが間違っています');
+            }
+        }
+
+        document.getElementById('loginForm').onsubmit = function(e) {
+            e.preventDefault();
+            currentUser = document.getElementById('loginUsername').value;
+            alert('ログインしました');
+            document.getElementById('logoutBtn').style.display = 'block';
+            document.getElementById('buyTicketBtn').disabled = false;
+            document.getElementById('useTicketBtn').disabled = false;
+        };
+
+        document.getElementById('registerForm').onsubmit = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            // 登録処理
+            alert('登録完了');
+        };
+
+        document.getElementById('buyTicketForm').onsubmit = function(e) {
+            e.preventDefault();
+            const performance = document.getElementById('performanceSelect').value;
+            const password = document.getElementById('ticketPassword').value;
+            const date = new Date();
+            const formattedDate = `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}時${date.getMinutes()}分`;
+            ticketData.push({ performance, password, date: formattedDate, status: '未使用', url: '', user: currentUser });
+            alert('チケットを購入しました');
+            updateTicketTable();
+        };
+
+        function updateTicketTable() {
+            const tbody = document.getElementById('ticketTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            ticketData
+                .filter(ticket => ticket.user === currentUser)
+                .forEach((ticket, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${ticket.performance}</td>
+                        <td>${ticket.date}</td>
+                        <td>${ticket.status}</td>
+                        <td><button onclick="useTicket(${index})">使用</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+        }
+
+        function useTicket(index) {
+            const ticket = ticketData[index];
+            if (ticket.user !== currentUser) {
+                alert('このチケットを使用する権限がありません。');
+                return;
+            }
+            const password = prompt('チケット使用時のパスワードを入力してください');
+            if (password === ticket.password) {
+                if (confirm('本当にチケットを使用しますか？')) {
+                    ticket.status = 'プレイ中';
+                    ticket.url = '指定のURL'; // ここを購入時に指定されたURLに変更
+                    updateTicketTable();
+                    window.location.href = ticket.url;
+                }
+            } else {
+                alert('パスワードが間違っています');
+            }
+        }
+
+        document.getElementById('deleteAccountForm').onsubmit
+ = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('deleteUsername').value;
+            const password = document.getElementById('deletePassword').value;
+            // アカウント削除処理
+            alert('アカウントを削除しました');
+        };
+
+        document.getElementById('addPerformanceForm').onsubmit = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('newPerformanceName').value;
+            const url = document.getElementById('newPerformanceURL').value;
+            const select = document.getElementById('performanceSelect');
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+            alert('公演を追加しました');
+        };
+
+        function logout() {
+            currentUser = null;
+            alert('ログアウトしました');
+            document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('buyTicketBtn').disabled = true;
+            document.getElementById('useTicketBtn').disabled = true;
+            showTab('login');
+        }
+
+        // 初期状態でチケット購入と使用ボタンを無効化
+        document.getElementById('buyTicketBtn').disabled = true;
+        document.getElementById('useTicketBtn').disabled = true;
+
+        // 初期状態でログインタブを表示
+        showTab('login');
+    </script>
+</body>
+</html>
